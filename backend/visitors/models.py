@@ -5,11 +5,8 @@ from django.contrib.auth.models import BaseUserManager
 import os
 
 
-def image_dir_path(instance, filename):
-    base_dir = "visitors_cards"
-    visitor = instance.username
-    return os.path.join(base_dir, visitor, filename)
 
+############ VISITOR MODEL #############
 
 class VisitorManager(BaseUserManager):
     def create_visitor(self, card_image, last_name, first_names, username, email=None, phone_number=None, sex=None):
@@ -55,3 +52,16 @@ class Visitor(models.Model):
 
     def __str__(self) -> str:
         return f"{self.username}"
+
+
+
+######## VISIT MODEL #########
+
+
+class Visit(models.Model):
+    visitor = models.ForeignKey(to=Visitor, on_delete=models.DO_NOTHING, null=False, blank=False)
+    visit_start_date = models.DateField(auto_now_add=True)
+    visit_end_date = models.DateField(blank=False, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+

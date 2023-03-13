@@ -55,7 +55,7 @@ class CardModelDetector:
                 return None
             if not first_names or first_names == "":
                 return None
-            suggested_username = last_name + first_names
+            suggested_username = f"{last_name} {first_names}"
             #username = self.generate_username(suggested_username)
             valid_data = {
                 'last_name': last_name,

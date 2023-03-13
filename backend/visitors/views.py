@@ -2,16 +2,16 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from visitors.tools.card_model_detector import CardModelDetector
 from visitors.tools.filemanager import Filemanager
-from visitors.serializers import VisitorRegistrationSerializer
+from visitors.serializers import VisitorCardScanSerializer, VisitorCrudSerializer, VisitCrudSerializer
 from rest_framework import generics, status, views
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser, FileUploadParser
 from django.conf import settings
-from visitors.models import Visitor
+from visitors.models import Visitor, Visit
 from PIL import Image
 import os, uuid
 
-class RegistrationView(generics.GenericAPIView):
-    serializer_class = VisitorRegistrationSerializer
+class ApiScanView(generics.GenericAPIView):
+    serializer_class = VisitorCardScanSerializer
     parser_classes = (JSONParser, FormParser, MultiPartParser, FileUploadParser)
 
     def post(self, request):
@@ -50,3 +50,49 @@ class RegistrationView(generics.GenericAPIView):
         else:
             Filemanager.expunge_folder_datas('temp/')
             return Response({"msg": f"The visitor {visitor['username']} started a new visit"}, status=status.HTTP_200_OK)
+
+
+class VisitorList(generics.ListCreateAPIView):
+    serializer_class = VisitorCrudSerializer
+    queryset = Visitor.objects.all()
+
+    def perform_create(self, serializer):
+        return serializer.save()
+
+    def get_queryset(self):
+        return self.queryset.filter()
+
+
+class VisitorDetail(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = VisitorCrudSerializer
+    queryset = Visitor.objects.all()
+    lookup_field = "username"
+
+    def perform_create(self, serializer):
+        return serializer.save()
+
+    def get_queryset(self):
+        return self.queryset.filter()
+
+
+class VisitList(generics.ListCreateAPIView):
+    serializer_class = VisitCrudSerializer
+    queryset = Visit.objects.all()
+
+    def perform_create(self, serializer):
+        return serializer.save()
+
+    def get_queryset(self):
+        return self.queryset.filter()
+
+
+class VisitDetail(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = VisitCrudSerializer
+    queryset = Visit.objects.all()
+    lookup_field = "id"
+
+    def perform_create(self, serializer):
+        return serializer.save()
+
+    def get_queryset(self):
+        return self.queryset.filter()
