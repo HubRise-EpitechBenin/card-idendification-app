@@ -2,23 +2,30 @@
 
 import 'package:camera/camera.dart';
 import 'package:card_app/takePicture.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:io';
 
 import 'model/user.dart';
+import 'network_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(
-    MaterialApp(theme: ThemeData.dark(), home: MyApp()),
+    MaterialApp(
+      theme: ThemeData.dark(),
+      home: MyApp(),
+      debugShowCheckedModeBanner: false,
+    ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+  final NetworkHandler _networkHandler = NetworkHandler();
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +35,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: const MyHomePage(title: 'home scan'),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -40,6 +48,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  List<User> _users = [];
+  final NetworkHandler _networkHandler = NetworkHandler();
   int _selectedIndex = 0;
   void _onItemTapped(int index) async {
     var cam = await availableCameras();
@@ -65,15 +75,49 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchUsers();
+  }
+
+  void _fetchUsers() async {
+    final response = await _networkHandler.get("/visitors/");
+    DateTime now = DateTime.now();
+    String currentTime = '${now.hour}:${now.minute}';
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonData = json.decode(response.body);
+      final List<User> users = jsonData
+          .map((data) => User(
+                data['first_names'],
+                data['last_name'],
+                data['phone_number'].substring(4),
+                currentTime,
+                false,
+              ))
+          .toList();
+      final newUsers = users.toSet().difference(_users.toSet());
+      _users.addAll(newUsers);
+      setState(() {
+        //_users = users;
+      });
+    } else {
+      throw Exception('Failed to load users');
+    }
+  }
+
   Widget build(BuildContext context) {
-    final List<User> list = [
-      User('Codo', 'Soraya', '548795', 'Etudiant', '09:22', false),
-      User('Codo', 'Soraya', '548795', 'Etudiant', '09:22', true),
-      User('Codo', 'Soraya', '548795', 'Etudiant', '09:22', false),
-      User('Codo', 'Soraya', '548795', 'Etudiant', '09:22', true),
-      User('Codo', 'Soraya', '548795', 'Etudiant', '09:22', false),
-      User('Codo', 'Soraya', '548795', 'Etudiant', '09:22', true),
-    ];
+    // var re = _networkHandler.get("/visitors/");
+    // //final List<dynamic> jsonData = json.decode(re.body);
+    // final List<User> list = [
+    //   User('Codo', 'Soraya', '61665803', '09:22', false),
+    //   User('Codo', 'Soraya', '61665803', '09:22', true),
+    //   User('Codo', 'Soraya', '61665803', '09:22', false),
+    //   User('Codo', 'Soraya', '61665803', '09:22', true),
+    //   User('Codo', 'Soraya', '61665803', '09:22', false),
+    //   User('Codo', 'Soraya', '61665803', '09:22', true),
+    // ];
+    //_fetchUsers();
+
     return SafeArea(
         child: Scaffold(
       // appBar: AppBar(
@@ -89,7 +133,9 @@ class _MyHomePageState extends State<MyHomePage> {
               color: Colors.blue,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                //mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
+                  SizedBox(height: 50.0, width: 80.0),
                   ListTile(
                     leading: Icon(Icons.calendar_month),
                     title: Text(getCurrentDate(),
@@ -106,28 +152,42 @@ class _MyHomePageState extends State<MyHomePage> {
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         SizedBox(height: 30),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: const <Widget>[
-            Text('Noms  '),
-            Text('Prénoms'),
-            Text('Numéro '),
-            Text('Profil '),
-            Text('HA     '),
-            Text('HD     ')
+            SizedBox(width: 5.0),
+            SizedBox(width: 61, child: Text('Noms')),
+            SizedBox(width: 70, child: Text('Prénoms')),
+            SizedBox(width: 75, child: Text('Numéro')),
+            SizedBox(width: 65, child: Text('Arrivé(e)')),
+            SizedBox(width: 65, child: Text('Départ')),
+            //SizedBox(height: 15),
+            //   Text('Noms  '),
+            //   Text('Prénoms'),
+            //   Text('Numéro '),
+            //  // Text('Profil '),
+            //   Text('HA     '),
+            //   Text('HD     ')
           ],
         ),
-        Container(
-          height: 3,
-          width: double.infinity,
-          color: Colors.black,
+        Padding(
+          padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0),
+          child: Container(
+            height: 3,
+            width: double.infinity,
+            color: Colors.black,
+          ),
         ),
         Flexible(
             child: ListView.builder(
                 //scrollDirection: Axis.vertical,
                 shrinkWrap: true,
-                itemCount: list.length,
+                itemCount: _users.length,
                 itemBuilder: (context, index) {
-                  return UserLine(user: list[index]);
+                  return Padding(
+                    padding:
+                        const EdgeInsets.only(left: 8.0, top: 8.0, right: 18.0),
+                    child: UserLine(user: _users[index]),
+                  );
                 }))
       ])),
       bottomNavigationBar: Material(
@@ -135,16 +195,16 @@ class _MyHomePageState extends State<MyHomePage> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.house),
-            label: 'all visitors',
+            label: 'Tous les visiteurs',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add),
-            label: 'add visitors',
+            label: 'Nouveaux visiteurs',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_rounded),
-            label: 'Active',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.person_rounded),
+          //   label: 'Actif',
+          // ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Color.fromARGB(255, 119, 119, 119),

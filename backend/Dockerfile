@@ -12,6 +12,8 @@ RUN apt-get update \
 
 RUN pip install -r requirements.txt
 
+RUN pip install drf_yasg # ajout de cette ligne
+
 RUN python manage.py makemigrations && python manage.py migrate
 
 EXPOSE 8080

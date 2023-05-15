@@ -1,6 +1,7 @@
 import pytesseract, random                              
 from PIL import Image 
 from visitors.card_models.national_id_card import NationalIdCard
+from visitors.card_models.ecowas_id_card import EcowasIdCard
 from visitors.models import Visitor
 
 
@@ -22,8 +23,9 @@ class CardModelDetector:
                 print("Found")
                 self._parser = NationalIdCard()
             else:
-                print("Not found")
-                raise Exception("Undefined Card id patterns")
+                self._parser = EcowasIdCard()
+                # print("Not found")
+                # raise Exception("Undefined Card id patterns")
         except:
             print("Could not detect card model")
             return
